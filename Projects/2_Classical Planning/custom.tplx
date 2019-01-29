@@ -1,0 +1,6 @@
+% Inherit from the article.tplx
+((* extends 'article.tplx' *))
+
+% remove inputs
+((* block input_group *))
+((* endblock input_group *))
