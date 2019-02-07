@@ -41,7 +41,8 @@ class CustomPlayer(MinimaxPlayer):
           Refer to (and use!) the Isolation.play() function to run games.
         **********************************************************************
         """
-        self.debug = True
+        self.debug = False
+        self.indicate_iteration = True
         # self.alpha_beta_search(state)
         # self.mcts(state)
         # self.mcts(state, use_stm=True)
@@ -148,8 +149,11 @@ class CustomPlayer(MinimaxPlayer):
             refine which move is best for the opening move given whether the player is playing first
             or second and if playing second, where did the oponent place its piece.
         """
-        self.log('************* PLY NUMBER: {} - PLAYER: {} *************'.format(state.ply_count, self.player_id))
-        if self.debug: print(DebugState.from_state(state))
+        if self.debug:
+            self.log('************* PLY NUMBER: {} - PLAYER: {} *************'.format(state.ply_count, self.player_id))
+            print(DebugState.from_state(state))
+        elif self.indicate_iteration:
+            print('.', end='')
 
         current_location = state.locs[self.player_id]
         self.log('Current location: {}'.format(current_location))
@@ -165,7 +169,7 @@ class CustomPlayer(MinimaxPlayer):
 
         if use_stm:
 
-            if self.data and self.data['short_term'] and self.player_id in self.data['short_term'].keys():
+            if self.data and 'short_term' in self.data.keys() and self.player_id in self.data['short_term'].keys():
                 self.log('STM Recovered')
                 short_term_memory = self.data['short_term'][self.player_id]
                 self.log('STM Ply: {}'.format(short_term_memory['ply']))
@@ -334,12 +338,18 @@ class CustomPlayer(MinimaxPlayer):
         self.log('Opening Move memory: {}'.format(memory))
         total_games = sum(memory[position]['games'] for position in memory)
         self.log('Opening Move total_games: {}'.format(total_games))
+
         def ucb1(experience):
             if experience['games'] == 0:
                 return float("inf")
             return experience['wins']/experience['games'] + 2 * math.sqrt(math.log(total_games) /  experience['games'])
 
-        return max(list(memory.keys()), key=lambda position: ucb1(memory[position]))
+        positions = list(memory.keys())
+        max_ucb1 = max(ucb1(memory[p]) for p in positions)
+        self.log('max_ucb1: {}'.format(max_ucb1))
+        matching_positions = list(filter(lambda p: ucb1(memory[p]) == max_ucb1, positions))
+        self.log('matching_positions: {}'.format(matching_positions))
+        return random.choice(matching_positions)
 
     def evaluate_end_of_game(self, state, actions):
         self.log('Evaluating end of game')
